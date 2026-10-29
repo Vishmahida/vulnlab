@@ -1,4 +1,4 @@
-# VulnLab v2 – mapped to CSM5011C Web Application Security
+# VulnLab v2 
 
 **WARNING:** deliberately insecure. Run on localhost, a host-only VM network, or a server firewalled to your IP only.
 
@@ -7,8 +7,7 @@
     # or: pip install -r requirements.txt && python app.py      (reset data: /reset-data)
 Server access: keep port closed and use `ssh -L 5000:localhost:5000 user@server`.
 
-## Syllabus map
-| Unit | Topic | Where / hint |
+##
 |---|---|---|
 | 1 | Banner grabbing, fingerprinting | `curl -I /` → Server / X-Powered-By; nmap -sV |
 | 1 | Hidden resources, default pages, OSINT | /robots.txt, /server-status, /backup.sql.bak, gobuster/dirb |
@@ -31,7 +30,6 @@ Server access: keep port closed and use `ssh -L 5000:localhost:5000 user@server`
 | 4 | Secure headers | note missing CSP, HSTS, X-Frame-Options → write the fix |
 
 **Not included:** RFI (needs outbound fetching, risky on a server), HTTP response splitting (modern Flask blocks CR/LF), XPath injection, WebSockets.
-For Practicals 12 & 15 use bWAPP via Docker and Nessus on this lab.
 
 ## Remediation exercise (Term Work 4 report)
 Fix each issue: parameterized queries, output escaping, ownership/role checks, random HttpOnly+Secure+SameSite sessions,
