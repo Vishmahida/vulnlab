@@ -1,4 +1,4 @@
-"""VulnLab v2 
+"""VulnLab v2
 Run ONLY in an isolated lab (localhost / VM / firewalled host). Never expose to the internet."""
 import sqlite3, os, base64, hashlib, itertools
 from flask import (Flask, request, make_response, redirect, render_template_string,
@@ -75,7 +75,7 @@ footer h4{color:#fff;margin:0 0 .6rem}footer a{color:#9ca3af;display:block;margi
 <form class=sbox action="/search"><input name=q placeholder="Search for laptops, phones, headphones…"><button>🔍</button></form>
 <div class=icons><a href="/login">👤 Account</a><a href="/shop">🛒 Cart</a></div></div>
 <nav><div><a href="/">Home</a><a href="/search">All Products</a><a href="/guestbook">Reviews</a><a href="/transfer">Wallet</a>
-<a href="/upload">Support</a><a href="/login">Login</a><a href="/labs">🧪 Labs</a></div></nav></header>
+<a href="/upload">Support</a><a href="/login">Login</a><a href="/register">Register</a><a href="/labs">🧪 Labs</a></div></nav></header>
 <main>{{ body|safe }}</main>
 <footer><div class=fc>
 <div><h4>ShopSphere</h4><p>A fictional demo store built for security training.</p></div>
@@ -148,7 +148,7 @@ def home():
 
 @app.route("/labs")
 def labs():
-    return page("""<h2>🧪 Lab challenges (syllabus map)</h2>
+    return page("""<h2>🧪 Lab challenges </h2>
 <b>Unit 1 Recon:</b> check response headers, <a href="/robots.txt">robots.txt</a>, <a href="/server-status">default pages</a>, hidden files, error messages<br>
 <b>Unit 2:</b> <a href="/search">SQLi + reflected XSS</a>, <a href="/item?id=1">blind SQLi</a>, <a href="/feedback?msg=hi">stacked SQLi</a>, <a href="/guestbook">stored XSS</a>, <a href="/dom">DOM XSS</a><br>
 <b>Unit 3:</b> <a href="/login">login</a> (brute force, enumeration, fixation, remember-me), <a href="/reset">reset</a>, <a href="/profile?id=2">IDOR</a>, function-level checks, <a href="/go?url=/">open redirect</a><br>
@@ -217,7 +217,30 @@ def login():
         msg = "<p style=color:red>" + ("Wrong password" if ex else "Unknown user") + "</p>"   # VULN: user enumeration
     return page(f"""<h2>Login</h2>{msg}<form method=post onsubmit="localStorage.setItem('last_login',this.username.value+':'+this.password.value)">
 <input name=username placeholder=username><br><input name=password type=password placeholder=password><br>
-<label><input type=checkbox name=remember> remember me</label><br><button>Login</button></form>""")
+<label><input type=checkbox name=remember> remember me</label><br><button>Login</button></form><p>New here? <a href="/register">Create an account</a></p>""")
+
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    msg = ""
+    if request.method == "POST":
+        u, p = request.form.get("username", "").strip(), request.form.get("password", "")
+        if not u or not p:
+            msg = "<p style=color:red>Username and password required</p>"
+        else:
+            c = db()
+            # VULN: no password strength check, no uniqueness race protection, plaintext storage
+            exists = c.execute("SELECT 1 FROM users WHERE username=?", (u,)).fetchone()
+            if exists:
+                msg = "<p style=color:red>Username already taken</p>"
+            else:
+                c.execute("INSERT INTO users(username,password,role,secret,balance) VALUES (?,?,?,?,?)",
+                          (u, p, "user", f"{u}'s private note", 500))
+                c.commit()
+                return page(f"<h2>Account created</h2><p>Welcome, {u}! You can now <a href='/login'>log in</a>.</p>")
+    return page(f"""<h2>Create account</h2>{msg}<form method=post>
+<input name=username placeholder="Choose a username"><br>
+<input name=password type=password placeholder="Choose a password"><br>
+<button>Register</button></form><p>Already have an account? <a href="/login">Login</a></p>""")
 
 @app.route("/logout")
 def logout():  # VULN: only clears cookie; server session & remember cookie stay valid
